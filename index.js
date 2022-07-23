@@ -4,6 +4,9 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const mongoose = require('mongoose');
+const morgan = require('morgan');
+
+require('dotenv').config();
 
 const blogSchema = new mongoose.Schema({
   title: String,
@@ -12,11 +15,23 @@ const blogSchema = new mongoose.Schema({
   likes: Number,
 });
 
+blogSchema.set('toJSON', {
+  transform: (document, returned) => {
+    // We have to use eslint-disable-line on these lines because of the way mongoose works.
+    returned.id = returned._id.toString(); // eslint-disable-line 
+    delete returned.__v; // eslint-disable-line
+    delete returned._id; // eslint-disable-line
+
+    // console.log('Transformed:', document, 'into:', returned);
+  },
+});
+
 const Blog = mongoose.model('Blog', blogSchema);
 
-const mongoUrl = 'mongodb://localhost/bloglist';
+const mongoUrl = process.env.MONGODB_URI;
 mongoose.connect(mongoUrl);
 
+app.use(morgan('short'));
 app.use(cors());
 app.use(express.json());
 
@@ -29,6 +44,7 @@ app.get('/api/blogs', (request, response) => {
 });
 
 app.post('/api/blogs', (request, response) => {
+  // console.log(request.body);
   const blog = new Blog(request.body);
 
   blog
