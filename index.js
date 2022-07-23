@@ -1,60 +1,10 @@
-// const http = require('http')
-const express = require('express');
+const http = require('http');
+const app = require('./app');
+const logger = require('./utils/logger');
+const { PORT } = require('./utils/config');
 
-const app = express();
-const cors = require('cors');
-const mongoose = require('mongoose');
-const morgan = require('morgan');
+const server = http.createServer(app);
 
-require('dotenv').config();
-
-const blogSchema = new mongoose.Schema({
-  title: String,
-  author: String,
-  url: String,
-  likes: Number,
-});
-
-blogSchema.set('toJSON', {
-  transform: (document, returned) => {
-    // We have to use eslint-disable-line on these lines because of the way mongoose works.
-    returned.id = returned._id.toString(); // eslint-disable-line 
-    delete returned.__v; // eslint-disable-line
-    delete returned._id; // eslint-disable-line
-
-    // console.log('Transformed:', document, 'into:', returned);
-  },
-});
-
-const Blog = mongoose.model('Blog', blogSchema);
-
-const mongoUrl = process.env.MONGODB_URI;
-mongoose.connect(mongoUrl);
-
-app.use(morgan('short'));
-app.use(cors());
-app.use(express.json());
-
-app.get('/api/blogs', (request, response) => {
-  Blog
-    .find({})
-    .then((blogs) => {
-      response.json(blogs);
-    });
-});
-
-app.post('/api/blogs', (request, response) => {
-  // console.log(request.body);
-  const blog = new Blog(request.body);
-
-  blog
-    .save()
-    .then((result) => {
-      response.status(201).json(result);
-    });
-});
-
-const PORT = 3003;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, () => {
+  logger.info(`server running on port ${PORT}`);
 });
