@@ -1,9 +1,12 @@
+// Don't log during tests
+const TESTING = process.env.NODE_ENV === 'test';
+
 const info = (...args) => {
-  console.log(...args);
+  if (!TESTING) console.log(...args);
 };
 
 const error = (...args) => {
-  console.error(...args);
+  if (!TESTING) console.error(...args);
 };
 
 module.exports = {
