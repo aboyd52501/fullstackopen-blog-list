@@ -11,15 +11,11 @@ blogsRouter.get('/', async (req, res) => {
   res.json(blogs);
 });
 
-blogsRouter.get('/:id', async (req, res, next) => {
+blogsRouter.get('/:id', async (req, res) => {
   const blog = await Blog.findById(req.params.id);
 
-  try {
-    if (blog) res.json(blog);
-    else res.status(404).end();
-  } catch (e) {
-    next(e);
-  }
+  if (blog) res.json(blog);
+  else res.status(404).end();
   // Blog
   //   .findById(req.params.id)
   //   .then((blog) => {
@@ -32,15 +28,12 @@ blogsRouter.get('/:id', async (req, res, next) => {
   //   .catch(next);
 });
 
-blogsRouter.post('/', async (req, res, next) => {
+blogsRouter.post('/', async (req, res) => {
   const blog = new Blog(req.body);
 
-  try {
-    const returnedBlog = await blog.save();
-    res.status(201).json(returnedBlog);
-  } catch (e) {
-    next(e);
-  }
+  const returnedBlog = await blog.save();
+  res.status(201).json(returnedBlog);
+
   // blog
   //   .save()
   //   .then((returnedBlog) => {
@@ -49,13 +42,9 @@ blogsRouter.post('/', async (req, res, next) => {
   //   .catch(next);
 });
 
-blogsRouter.delete('/:id', async (req, res, next) => {
-  try {
-    await Blog.findByIdAndDelete(req.params.id);
-    res.status(204).end();
-  } catch (e) {
-    next(e);
-  }
+blogsRouter.delete('/:id', async (req, res) => {
+  await Blog.findByIdAndDelete(req.params.id);
+  res.status(204).end();
   // Blog
   //   .findByIdAndRemove(req.params.id)
   //   .then(() => {
@@ -64,17 +53,13 @@ blogsRouter.delete('/:id', async (req, res, next) => {
   //   .catch(next);
 });
 
-blogsRouter.put('/:id', async (req, res, next) => {
-  try {
-    const newBlog = await Blog.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true },
-    );
-    res.json(newBlog);
-  } catch (e) {
-    next(e);
-  }
+blogsRouter.put('/:id', async (req, res) => {
+  const newBlog = await Blog.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true },
+  );
+  res.json(newBlog);
   // Blog
   //   .findByIdAndUpdate(
   //     req.params.id,
