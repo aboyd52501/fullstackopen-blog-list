@@ -8,11 +8,15 @@ const { initialBlogs, blogsInDb } = require('./test_helper');
 const api = supertest(app);
 
 beforeEach(async () => {
-  await Blog.deleteMany({});
-  let blogObject = new Blog(initialBlogs[0]);
-  await blogObject.save();
-  blogObject = new Blog(initialBlogs[1]);
-  await blogObject.save();
+  await Blog.deleteMany();
+  const initialBlogDocuments = initialBlogs.map((data) => new Blog(data));
+  const promiseArray = initialBlogDocuments.map((blog) => blog.save());
+  await Promise.all(promiseArray);
+  // await Blog.deleteMany({});
+  // let blogObject = new Blog(initialBlogs[0]);
+  // await blogObject.save();
+  // blogObject = new Blog(initialBlogs[1]);
+  // await blogObject.save();
 });
 
 test('blogs are returned as json', async () => {
