@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 const mongoose = require('mongoose');
 const supertest = require('supertest');
 const app = require('../app');
@@ -27,13 +28,19 @@ test('blogs are returned as json', async () => {
 }); // If the requests take longer than 5s, add a third param to this func (milliseconds)
 
 test('there are two blogs', async () => {
-  const res = await api.get('/api/blogs');
-  expect(res.body).toHaveLength(initialBlogs.length);
+  const blogs = await blogsInDb();
+  expect(blogs).toHaveLength(initialBlogs.length);
 });
 
-test('the first blog is titled "HTML is easy"', async () => {
-  const res = await api.get('/api/blogs');
-  expect(res.body[0].title).toBe(initialBlogs[0].title);
+test('blogs use .id and not ._id', async () => {
+  const blogs = await blogsInDb();
+  const idCheckingPromises = blogs.map(
+    (blog) => expect(blog.id).toBeDefined(),
+  );
+  const _idCheckingPromises = blogs.map(
+    (blog) => expect(blog._id).not.toBeDefined(),
+  );
+  await Promise.all([...idCheckingPromises, ..._idCheckingPromises]);
 });
 
 test('a valid blog can be added', async () => {
@@ -105,7 +112,7 @@ test('a blog can be deleted', async () => {
 });
 
 test('a blog can be modified', async () => {
-  const blogsAtStart = await Blog.find({});
+  const blogsAtStart = await blogsInDb();
 
   const oldFirstBlog = blogsAtStart[0];
   const newFirstBlog = JSON.parse(JSON.stringify(blogsAtStart[0]));
