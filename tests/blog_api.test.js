@@ -69,6 +69,7 @@ test('a valid blog can be added', async () => {
 test('a blog without a title isn\'t added', async () => {
   const newBlog = {
     likes: 15,
+    url: 'no title!',
   };
 
   await api
@@ -78,6 +79,36 @@ test('a blog without a title isn\'t added', async () => {
 
   const res = await blogsInDb();
   expect(res).toHaveLength(initialBlogs.length);
+});
+
+test('a blog without a url isn\'t added', async () => {
+  const newBlog = {
+    likes: 15,
+    title: 'no url!',
+  };
+
+  await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(400);
+
+  const res = await blogsInDb();
+  expect(res).toHaveLength(initialBlogs.length);
+});
+
+test('likes property defaults to 0', async () => {
+  const newBlog = {
+    title: 'default likes = 0 // test',
+    author: 'jest',
+    url: '1234',
+  };
+
+  const response = await api
+    .post('/api/blogs')
+    .send(newBlog)
+    .expect(201);
+
+  expect(response.body.likes).toBe(0);
 });
 
 test('a specific blog can be viewed', async () => {
