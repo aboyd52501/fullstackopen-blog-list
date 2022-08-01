@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 const mongoose = require('mongoose');
 
 const blogSchema = new mongoose.Schema({
@@ -16,13 +17,12 @@ const blogSchema = new mongoose.Schema({
   },
 });
 
+/* eslint-disable no-param-reassign */
 blogSchema.set('toJSON', {
   transform: (document, returned) => {
-    // We have to use eslint-disable-line on these lines because of the way mongoose works.
-    returned.id = returned._id.toString(); // eslint-disable-line 
-    delete returned.__v; // eslint-disable-line
-    delete returned._id; // eslint-disable-line
-
+    returned.id = returned._id.toString();
+    delete returned.__v;
+    delete returned._id;
     // console.log('Transformed:', document, 'into:', returned);
   },
 });
