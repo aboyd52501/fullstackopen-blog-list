@@ -124,6 +124,43 @@ describe('when some notes are initially saved', () => {
         .expect(400);
     });
   });
+
+  describe('modification of a blog', () => {
+    test('succeeds with valid data', async () => {
+      const blogsBefore = await blogsInDb();
+      const blogToUpdate = { ...blogsBefore[0] };
+      blogToUpdate.author = 'markiplier';
+      blogToUpdate.likes = -1;
+
+      const response = await api
+        .put(idUrl(blogToUpdate.id))
+        .send(blogToUpdate)
+        .expect(200);
+
+      const updatedBlog = response.body;
+      expect(updatedBlog).toEqual(blogToUpdate);
+      const blogsAfter = await blogsInDb();
+      expect(blogsAfter).toHaveLength(blogsBefore.length);
+      const found = blogsAfter.find((blog) => blog.id === blogToUpdate.id);
+      expect(found).toBeTruthy();
+    });
+
+    test('fails with status code 400 with invalid data', async () => {
+      const blogsBefore = await blogsInDb();
+      const blogToUpdate = { ...blogsBefore[0] };
+      blogToUpdate.author = true;
+      blogToUpdate.url = 27840;
+      blogToUpdate.likes = 'Hello world';
+
+      await api
+        .put(idUrl(blogToUpdate.id))
+        .send(blogToUpdate)
+        .expect(400);
+
+      const blogsAfter = await blogsInDb();
+      expect(blogsAfter).toEqual(blogsBefore);
+    });
+  });
 });
 
 /* test('blogs are returned as json', async () => {
