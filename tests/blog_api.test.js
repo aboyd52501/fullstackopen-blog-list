@@ -3,10 +3,15 @@ const mongoose = require('mongoose');
 const supertest = require('supertest');
 const app = require('../app');
 const Blog = require('../models/blog');
-const { initialBlogs, blogsInDb } = require('./test_helper');
+const { initialBlogs, blogsInDb, nonExistingId } = require('./test_helper');
 
 // We are creating a supertest instance of the backend REST API server.
 const api = supertest(app);
+
+// for convenience
+const BASE_URL = '/api/blogs';
+const idUrl = (id) => `${BASE_URL}/${id}`;
+const getAllBlogs = () => api.get(BASE_URL);
 
 beforeEach(async () => {
   await Blog.deleteMany();
@@ -20,7 +25,108 @@ beforeEach(async () => {
   // await blogObject.save();
 });
 
-test('blogs are returned as json', async () => {
+describe('when some notes are initially saved', () => {
+  test('notes are returned as json', async () => {
+    await getAllBlogs()
+      .expect(200)
+      .expect('Content-Type', /application\/json/);
+  });
+
+  test('all notes are returned', async () => {
+    const response = await getAllBlogs();
+    expect(response.body.length).toBe(initialBlogs.length);
+  });
+
+  test('exactly what is saved is returned', async () => {
+    const responseBlogs = (await getAllBlogs()).body;
+    const blogsAtStart = await blogsInDb();
+    expect(blogsAtStart).toEqual(responseBlogs);
+  });
+
+  describe('viewing a specific note', () => {
+    test('succeeds with a valid id', async () => {
+      const blogsAtStart = await blogsInDb();
+      const targetBlog = blogsAtStart[0];
+      const response = await api
+        .get(idUrl(targetBlog.id))
+        .expect(200)
+        .expect('Content-Type', /application\/json/);
+
+      expect(response.body).toEqual(targetBlog);
+    });
+
+    test('fails with code 404 with a valid but unused id', async () => {
+      const id = await nonExistingId();
+      await api
+        .get(idUrl(id))
+        .expect(404);
+    });
+
+    test('fails with status code 400 with an invalid id', async () => {
+      const id = ')@(*@#@!#';
+      await api
+        .get(idUrl(id))
+        .expect(400);
+    });
+  });
+
+  describe('addition of a new note', () => {
+    test('succceeds with status code 201 with valid data', async () => {
+      const newBlog = {
+        url: 'hello',
+        author: 'hi',
+        title: 'hello world',
+        likes: 1233214,
+      };
+
+      const response = await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(201)
+        .expect('Content-Type', /application\/json/);
+
+      const blogsAfter = await blogsInDb();
+      expect(blogsAfter).toContainEqual(response.body);
+    });
+
+    test('fails with status code 400 if data is invalid', async () => {
+      const newBlog = {
+        author: 'jeff',
+      };
+
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(400)
+        .expect('Content-Type', /application\/json/);
+    });
+  });
+
+  describe('deletion of a note', () => {
+    test('succeeds with status code 204 if id is valid', async () => {
+      const blogsBefore = await blogsInDb();
+      const blogToDelete = blogsBefore[0];
+
+      await api
+        .delete(idUrl(blogToDelete.id))
+        .expect(204);
+
+      const blogsAfter = await blogsInDb();
+      expect(blogsAfter).toHaveLength(blogsBefore.length - 1);
+      const ids = blogsAfter.map((blog) => blog.id);
+      expect(ids).not.toContain(blogToDelete.id);
+    });
+
+    test('fails with status code 400 if id is invalid', async () => {
+      const badId = '(A*S)(&';
+      await api
+        .delete(idUrl(badId))
+        .expect(400);
+    });
+  });
+});
+
+/* test('blogs are returned as json', async () => {
   await api
     .get('/api/blogs')
     .expect(200)
@@ -158,7 +264,7 @@ test('a blog can be modified', async () => {
   // You must get the .body of a supertest response to get the body!
   expect(modifiedFirstBlogRes.body.author).toBe(newFirstBlog.author);
   expect(modifiedFirstBlogRes.body.author).not.toBe(oldFirstBlog.author);
-});
+}); */
 
 afterAll(() => {
   mongoose.connection.close();

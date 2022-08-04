@@ -16,7 +16,7 @@ const initialBlogs = [
 ];
 
 const nonExistingId = async () => {
-  const blog = new Blog({ title: 'i am leaving soon' });
+  const blog = new Blog({ title: 'i am leaving soon', url: 'ephemeral.io' });
   await blog.save();
   await blog.delete();
 
