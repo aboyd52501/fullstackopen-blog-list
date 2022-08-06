@@ -1,4 +1,5 @@
 const Blog = require('../models/blog');
+const User = require('../models/user');
 
 const initialBlogs = [
   {
@@ -12,6 +13,14 @@ const initialBlogs = [
     author: 'Mozilla Chrome',
     url: 'https://www.opera.com/',
     likes: 1000000000,
+  },
+];
+
+const initialUsers = [
+  {
+    username: 'testAuthor',
+    name: 'Testing Author',
+    password: 'hello world',
   },
 ];
 
@@ -29,8 +38,15 @@ const blogsInDb = async () => {
   return JSON.parse(JSON.stringify(blogs));
 };
 
+const usersInDb = async () => {
+  const users = await User.find({});
+  return JSON.parse(JSON.stringify(users));
+};
+
 module.exports = {
   initialBlogs,
+  initialUsers,
   nonExistingId,
   blogsInDb,
+  usersInDb,
 };

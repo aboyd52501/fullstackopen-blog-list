@@ -3,7 +3,13 @@ const mongoose = require('mongoose');
 const supertest = require('supertest');
 const app = require('../app');
 const Blog = require('../models/blog');
-const { initialBlogs, blogsInDb, nonExistingId } = require('./test_helper');
+const User = require('../models/user');
+const {
+  initialBlogs,
+  initialUsers,
+  blogsInDb,
+  nonExistingId,
+} = require('./test_helper');
 
 // We are creating a supertest instance of the backend REST API server.
 const api = supertest(app);
@@ -13,9 +19,28 @@ const BASE_URL = '/api/blogs';
 const idUrl = (id) => `${BASE_URL}/${id}`;
 const getAllBlogs = () => api.get(BASE_URL);
 
+let authorId = null;
+beforeAll(async () => {
+  await User.deleteMany();
+  const response = await api
+    .post('/api/users')
+    .send(initialUsers[0])
+    .expect(201)
+    .expect('Content-Type', /application\/json/);
+  const authorUser = response.body;
+
+  authorId = authorUser.id;
+  expect(authorId).toBeTruthy();
+});
+
 beforeEach(async () => {
   await Blog.deleteMany();
-  const initialBlogDocuments = initialBlogs.map((data) => new Blog(data));
+  const initialBlogDocuments = initialBlogs.map((data) => (
+    new Blog({
+      user: authorId,
+      ...data,
+    })
+  ));
   const promiseArray = initialBlogDocuments.map((blog) => blog.save());
   await Promise.all(promiseArray);
   // await Blog.deleteMany({});
@@ -25,25 +50,28 @@ beforeEach(async () => {
   // await blogObject.save();
 });
 
-describe('when some notes are initially saved', () => {
-  test('notes are returned as json', async () => {
+describe('when some blogs are initially saved', () => {
+  test('blogs are returned as json', async () => {
     await getAllBlogs()
       .expect(200)
       .expect('Content-Type', /application\/json/);
   });
 
-  test('all notes are returned', async () => {
+  test('all blogs are returned', async () => {
     const response = await getAllBlogs();
     expect(response.body.length).toBe(initialBlogs.length);
   });
 
   test('exactly what is saved is returned', async () => {
-    const responseBlogs = (await getAllBlogs()).body;
     const blogsAtStart = await blogsInDb();
-    expect(blogsAtStart).toEqual(responseBlogs);
+    const responseBlogs = (await getAllBlogs()).body;
+    responseBlogs.forEach((x, i, arr) => {
+      arr[i].user = x.user.id; // eslint-disable-line no-param-reassign
+    });
+    expect(responseBlogs).toEqual(blogsAtStart);
   });
 
-  describe('viewing a specific note', () => {
+  describe('viewing a specific blog', () => {
     test('succeeds with a valid id', async () => {
       const blogsAtStart = await blogsInDb();
       const targetBlog = blogsAtStart[0];
@@ -70,13 +98,14 @@ describe('when some notes are initially saved', () => {
     });
   });
 
-  describe('addition of a new note', () => {
+  describe('addition of a new blog', () => {
     test('succceeds with status code 201 with valid data', async () => {
       const newBlog = {
         url: 'hello',
         author: 'hi',
         title: 'hello world',
         likes: 1233214,
+        userid: authorId,
       };
 
       const response = await api
@@ -102,7 +131,7 @@ describe('when some notes are initially saved', () => {
     });
   });
 
-  describe('deletion of a note', () => {
+  describe('deletion of a blog', () => {
     test('succeeds with status code 204 if id is valid', async () => {
       const blogsBefore = await blogsInDb();
       const blogToDelete = blogsBefore[0];
