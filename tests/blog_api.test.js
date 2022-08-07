@@ -183,13 +183,13 @@ describe('when some blogs are initially saved', () => {
         .expect(400);
     });
 
-    test('fails with status code 401 if token is invalid', async () => {
+    test('fails with status code 400 if token is invalid', async () => {
       const blogsBefore = await blogsInDb();
       const blogToDelete = blogsBefore[0];
 
       await api
         .delete(idUrl(blogToDelete.id))
-        .expect(401);
+        .expect(400);
     });
 
     test('fails with status code 401 if token is for another user', async () => {

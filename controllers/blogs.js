@@ -1,7 +1,5 @@
-const jwt = require('jsonwebtoken');
 const blogsRouter = require('express').Router();
 const Blog = require('../models/blog');
-const User = require('../models/user');
 
 blogsRouter.get('/', async (req, res) => {
   // Blog
@@ -33,16 +31,13 @@ blogsRouter.post('/', async (req, res) => {
     url,
     likes,
   } = req.body;
+  const { user } = req;
 
-  const decodedToken = jwt.verify(req.token, process.env.SECRET);
-  if (!decodedToken.id) {
-    return res.status(401).json({
-      error: 'token missing or invalid',
+  if (!user) {
+    return res.status(400).json({
+      error: 'no authentication supplied',
     });
   }
-  const user = await User.findById(decodedToken.id);
-
-  if (!user) return res.status(400).json({ error: 'user not found' });
 
   const blog = new Blog({
     title,
@@ -61,10 +56,16 @@ blogsRouter.post('/', async (req, res) => {
 });
 
 blogsRouter.delete('/:id', async (req, res) => {
-  const decodedToken = jwt.verify(req.token, process.env.SECRET);
-  const thisBlog = await Blog.findById(req.params.id);
+  const { user } = req;
 
-  if (decodedToken.id !== thisBlog.user.toString()) {
+  if (!user) {
+    return res.status(400).json({
+      error: 'no authentication supplied',
+    });
+  }
+
+  const thisBlog = await Blog.findById(req.params.id);
+  if (user._id.toString() !== thisBlog.user.toString()) {
     return res.status(401).json({
       error: 'insufficient permissions',
     });
