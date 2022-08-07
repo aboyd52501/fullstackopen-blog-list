@@ -24,16 +24,6 @@ blogsRouter.get('/:id', async (req, res) => {
 
   if (blog) res.json(blog);
   else res.status(404).end();
-  // Blog
-  //   .findById(req.params.id)
-  //   .then((blog) => {
-  //     if (blog) {
-  //       res.json(blog);
-  //     } else {
-  //       res.status(404).end();
-  //     }
-  //   })
-  //   .catch(next);
 });
 
 blogsRouter.post('/', async (req, res) => {
@@ -68,24 +58,20 @@ blogsRouter.post('/', async (req, res) => {
   await user.save();
 
   return res.status(201).json(returnedBlog);
-
-  // blog
-  //   .save()
-  //   .then((returnedBlog) => {
-  //     res.status(201).json(returnedBlog);
-  //   })
-  //   .catch(next);
 });
 
 blogsRouter.delete('/:id', async (req, res) => {
-  await Blog.findByIdAndDelete(req.params.id);
-  res.status(204).end();
-  // Blog
-  //   .findByIdAndRemove(req.params.id)
-  //   .then(() => {
-  //     res.status(204).end();
-  //   })
-  //   .catch(next);
+  const decodedToken = jwt.verify(req.token, process.env.SECRET);
+  const thisBlog = await Blog.findById(req.params.id);
+
+  if (decodedToken.id !== thisBlog.user.toString()) {
+    return res.status(401).json({
+      error: 'insufficient permissions',
+    });
+  }
+
+  await thisBlog.remove();
+  return res.status(204).end();
 });
 
 blogsRouter.put('/:id', async (req, res) => {
@@ -95,16 +81,6 @@ blogsRouter.put('/:id', async (req, res) => {
     { new: true },
   );
   res.json(newBlog);
-  // Blog
-  //   .findByIdAndUpdate(
-  //     req.params.id,
-  //     req.body,
-  //     { new: true },
-  //   )
-  //   .then((updatedBlog) => {
-  //     res.json(updatedBlog);
-  //   })
-  //   .catch(next);
 });
 
 module.exports = blogsRouter;

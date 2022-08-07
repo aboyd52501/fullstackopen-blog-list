@@ -20,6 +20,7 @@ const idUrl = (id) => `${BASE_URL}/${id}`;
 const getAllBlogs = () => api.get(BASE_URL);
 
 let sessionJWT = null;
+let authString = null;
 let authorId = null;
 beforeAll(async () => {
   await User.deleteMany();
@@ -40,6 +41,7 @@ beforeAll(async () => {
   const { token } = loginRes.body;
 
   sessionJWT = token;
+  authString = `bearer ${token}`;
 });
 
 beforeEach(async () => {
@@ -158,12 +160,13 @@ describe('when some blogs are initially saved', () => {
   });
 
   describe('deletion of a blog', () => {
-    test('succeeds with status code 204 if id is valid', async () => {
+    test('succeeds with status code 204 if id is valid and token is valid', async () => {
       const blogsBefore = await blogsInDb();
       const blogToDelete = blogsBefore[0];
 
       await api
         .delete(idUrl(blogToDelete.id))
+        .set('Authorization', authString)
         .expect(204);
 
       const blogsAfter = await blogsInDb();
@@ -172,11 +175,47 @@ describe('when some blogs are initially saved', () => {
       expect(ids).not.toContain(blogToDelete.id);
     });
 
-    test('fails with status code 400 if id is invalid', async () => {
+    test('fails with status code 400 if id is invalid and token is valid', async () => {
       const badId = '(A*S)(&';
       await api
         .delete(idUrl(badId))
+        .set('Authorization', authString)
         .expect(400);
+    });
+
+    test('fails with status code 401 if token is invalid', async () => {
+      const blogsBefore = await blogsInDb();
+      const blogToDelete = blogsBefore[0];
+
+      await api
+        .delete(idUrl(blogToDelete.id))
+        .expect(401);
+    });
+
+    test('fails with status code 401 if token is for another user', async () => {
+      const wrongUser = {
+        username: 'hellokitty',
+        password: '1234abcd',
+      };
+
+      await api
+        .post('/api/users')
+        .send(wrongUser)
+        .expect(201)
+        .expect('Content-Type', /application\/json/);
+
+      const { token } = (await api.post('/api/login').send(wrongUser)).body;
+
+      const blogsBefore = await blogsInDb();
+      const blogToDelete = blogsBefore[0];
+
+      await api
+        .delete(idUrl(blogToDelete.id))
+        .set('Authorization', `bearer ${token}`)
+        .expect(401)
+        .expect('Content-Type', /application\/json/);
+
+      expect(await blogsInDb()).toEqual(blogsBefore);
     });
   });
 
