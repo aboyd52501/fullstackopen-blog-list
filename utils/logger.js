@@ -1,4 +1,4 @@
-// Don't log during tests
+// Don't log info during tests
 const TESTING = process.env.NODE_ENV === 'test';
 
 const info = (...args) => {
