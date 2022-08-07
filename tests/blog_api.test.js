@@ -157,6 +157,21 @@ describe('when some blogs are initially saved', () => {
         .expect(401)
         .expect('Content-Type', /application\/json/);
     });
+
+    test('fails with status code 401 if data is valid but no token supplied', async () => {
+      const newBlog = {
+        url: 'hello',
+        author: 'hi',
+        title: 'hello world',
+        likes: 1233214,
+      };
+
+      await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(401)
+        .expect('Content-Type', /application\/json/);
+    });
   });
 
   describe('deletion of a blog', () => {

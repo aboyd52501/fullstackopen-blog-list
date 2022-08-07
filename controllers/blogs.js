@@ -34,7 +34,7 @@ blogsRouter.post('/', async (req, res) => {
   const { user } = req;
 
   if (!user) {
-    return res.status(400).json({
+    return res.status(401).json({
       error: 'no authentication supplied',
     });
   }
