@@ -3,11 +3,12 @@ const fs = require('fs');
 const TESTING = process.env.NODE_ENV === 'test';
 const LOGFILE = './.testoutput';
 
-if (fs.existsSync(LOGFILE)) fs.unlinkSync(LOGFILE);
+// if (fs.existsSync(LOGFILE)) fs.unlinkSync(LOGFILE);
 
-const writeLog = (content) => (
-  fs.writeFileSync(LOGFILE, content, { flag: 'a' })
-);
+const writeLog = (content) => {
+  const dateStr = new Date().toLocaleString('zh', { timeZoneName: 'shortOffset' } );
+  return fs.writeFileSync(LOGFILE, `${dateStr} ${content}`, { flag: 'a' })
+}
 
 const info = (...args) => {
   if (!TESTING) console.log(...args);
